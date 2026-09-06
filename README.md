@@ -117,39 +117,6 @@ The two sources also need two different cursor anchors, which turned out to matt
 
 ---
 
-## Two sources, two record shapes
-
-Every captured item is stored as a flat record, keyed by group. The two sources produce deliberately different shapes, and those differences are the reason the pipeline tags records by source instead of normalizing them into one.
-
-**WhatsApp**
-
-| Field | Notes |
-|---|---|
-| `ts` | Real message timestamp. The cursor anchor for this source. |
-| `msgId` | Primary deduplication key. |
-| `senderJid` | Raw sender identifier. Decides whether a phone number is recoverable at all — see challenge 2. |
-| `phone` | Present only when resolvable, and never trustworthy on its own. |
-| `name` | Display name. The fallback contact when no number exists. |
-| `text` | Message body, verbatim. |
-| `imagePath` | Local path to a downloaded image, or null. Not linked to any listing yet — see challenge 5. |
-| `fromMe` | Whether the account itself sent it. |
-
-**Facebook**
-
-| Field | Notes |
-|---|---|
-| `scrapedAt` | Capture time, from the connector's own clock. The cursor anchor for this source — see challenge 3. |
-| `tsRaw` | Facebook's relative time string, kept for humans only, never used for ordering. |
-| `postId` | Primary deduplication key. |
-| `permalink` | Always captured. The only reliable contact path on this source. |
-| `name` | Often an auto-generated pseudonym rather than a real name. |
-| `text` | Post body, after comment stripping — see challenge 1. |
-| `imagePath` | Attached at scrape time from the post's own element, so it needs none of WhatsApp's association guesswork. |
-
-There is no `phone` and no `senderJid` on the Facebook side, because Facebook exposes neither. A phone number exists there only if the poster typed one into the text. That single asymmetry is why the contact line is assembled per source instead of by one shared rule.
-
----
-
 ## Engineering challenges
 
 ### 1. The phone number that belonged to the wrong person
@@ -207,6 +174,39 @@ WhatsApp hands over the messages accumulated since the last disconnect to whiche
 The consequence is counterintuitive: running a small unrelated utility that happens to connect will consume messages that were on their way to the collector, and mark them delivered. They're then gone permanently, with nothing having failed. Two connections sharing one session are worse — that invalidates the session and forces a fresh sign-in.
 
 Both are operational rules rather than things the code can enforce: check for a live process before connecting, and never run a second connecting script while a collection run might be in flight.
+
+---
+
+## Two sources, two record shapes
+
+Every captured item is stored as a flat record, keyed by group. The two sources produce deliberately different shapes, and those differences are the reason the pipeline tags records by source instead of normalizing them into one.
+
+**WhatsApp**
+
+| Field | Notes |
+|---|---|
+| `ts` | Real message timestamp. The cursor anchor for this source. |
+| `msgId` | Primary deduplication key. |
+| `senderJid` | Raw sender identifier. Decides whether a phone number is recoverable at all — see challenge 2. |
+| `phone` | Present only when resolvable, and never trustworthy on its own. |
+| `name` | Display name. The fallback contact when no number exists. |
+| `text` | Message body, verbatim. |
+| `imagePath` | Local path to a downloaded image, or null. Not linked to any listing yet — see challenge 5. |
+| `fromMe` | Whether the account itself sent it. |
+
+**Facebook**
+
+| Field | Notes |
+|---|---|
+| `scrapedAt` | Capture time, from the connector's own clock. The cursor anchor for this source — see challenge 3. |
+| `tsRaw` | Facebook's relative time string, kept for humans only, never used for ordering. |
+| `postId` | Primary deduplication key. |
+| `permalink` | Always captured. The only reliable contact path on this source. |
+| `name` | Often an auto-generated pseudonym rather than a real name. |
+| `text` | Post body, after comment stripping — see challenge 1. |
+| `imagePath` | Attached at scrape time from the post's own element, so it needs none of WhatsApp's association guesswork. |
+
+There is no `phone` and no `senderJid` on the Facebook side, because Facebook exposes neither. A phone number exists there only if the poster typed one into the text. That single asymmetry is why the contact line is assembled per source instead of by one shared rule.
 
 ---
 
