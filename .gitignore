@@ -1,0 +1,8 @@
+# Unredacted originals - MUST never be published
+assets/raw/
+
+# Local preview build output
+_preview.html
+_artifact.html
+_build_preview.py
+_redact.py
